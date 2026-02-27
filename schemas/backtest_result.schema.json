@@ -1,0 +1,103 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "metrics": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Metrics",
+      "type": "object"
+    },
+    "gross_curve": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Gross Curve",
+      "type": "array"
+    },
+    "net_curve": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Net Curve",
+      "type": "array"
+    },
+    "drawdown_series": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Drawdown Series",
+      "type": "array"
+    },
+    "constraint_hit_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Constraint Hit Counts",
+      "type": "object"
+    },
+    "logs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Logs",
+      "type": "array"
+    },
+    "artifact_paths": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Artifact Paths",
+      "type": "object"
+    },
+    "hashes": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Hashes",
+      "type": "object"
+    }
+  },
+  "required": [
+    "metrics",
+    "gross_curve",
+    "net_curve",
+    "drawdown_series",
+    "constraint_hit_counts",
+    "logs",
+    "artifact_paths",
+    "hashes"
+  ],
+  "title": "BacktestResult",
+  "type": "object"
+}

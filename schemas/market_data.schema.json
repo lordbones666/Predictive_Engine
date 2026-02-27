@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "symbol": {
+      "title": "Symbol",
+      "type": "string"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "adjustments": {
+      "additionalProperties": true,
+      "title": "Adjustments",
+      "type": "object"
+    }
+  },
+  "required": [
+    "symbol",
+    "timezone",
+    "records"
+  ],
+  "title": "MarketData",
+  "type": "object"
+}

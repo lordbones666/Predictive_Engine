@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "symbol": {
+      "title": "Symbol",
+      "type": "string"
+    },
+    "horizon": {
+      "title": "Horizon",
+      "type": "integer"
+    },
+    "lags": {
+      "title": "Lags",
+      "type": "integer"
+    },
+    "feature_set_version": {
+      "title": "Feature Set Version",
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "symbol",
+    "horizon",
+    "lags",
+    "feature_set_version",
+    "records"
+  ],
+  "title": "FeatureFrame",
+  "type": "object"
+}

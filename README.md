@@ -1,0 +1,50 @@
+# Predictive Engine
+
+A contracts-first, leakage-safe, uncertainty-aware financial prediction engine with walk-forward evaluation.
+
+## Setup
+
+```bash
+python -m pip install -e '.[dev]'
+```
+
+## Core commands
+
+```bash
+python -m engine.cli ingest --config engine/config/default.yaml --input sample.csv
+python -m engine.cli features --config engine/config/default.yaml --market-data market_data.json
+python -m engine.cli train
+python -m engine.cli backtest --config engine/config/default.yaml --features feature_frame.json --walkforward --model linear_ridge --run-baselines
+python -m engine.cli backtest --config engine/config/default.yaml --features feature_frame.json --walkforward --model linear_ridge --run-baselines --fast  # CI-fast mode
+python -m engine.cli promote --config engine/config/default.yaml --candidate candidate.json --baseline baseline.json
+python -m engine.cli analyze --comparison comparison_results.json --external-context context.json --output decision_support.json
+python -c "import engine; import engine.data.schema"
+```
+
+## Guardrails implemented
+- JSON-schema + typed contract validation at boundaries.
+- Deterministic feature construction with explicit horizon and lags.
+- Walk-forward backtesting only.
+- Forecast distributions include mean, stdev, quantiles.
+- Decision layer applies costs + hard risk constraints.
+- Baseline-vs-candidate comparison outputs and promotion checks.
+- Artifact logging under `artifacts/run_<timestamp>/`.
+
+## Tooling
+
+```bash
+black .
+isort .
+ruff check .
+mypy engine
+pytest --cov=engine --cov-report=term-missing
+```
+
+## GPT role separation
+- Forecasts and positions come only from engine modules (`models/*`, `portfolio/*`, `backtest/*`).
+- `analyze` translates schema-valid artifacts into decision support and can attach timestamped external context without overriding model outputs.
+
+## Lineage hashes
+- `ingest` records raw input and cleaned dataframe hashes in market-data lineage metadata.
+- `features` records market-data and feature-frame hashes in feature metadata.
+- `backtest` propagates feature-frame hash into run artifact hashes for reproducibility checks.

@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "timestamp": {
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "target_position": {
+      "title": "Target Position",
+      "type": "number"
+    },
+    "risk_budget": {
+      "title": "Risk Budget",
+      "type": "number"
+    },
+    "expected_return": {
+      "title": "Expected Return",
+      "type": "number"
+    },
+    "expected_vol": {
+      "title": "Expected Vol",
+      "type": "number"
+    },
+    "constraints_hit": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Constraints Hit",
+      "type": "array"
+    },
+    "transaction_cost": {
+      "minimum": 0,
+      "title": "Transaction Cost",
+      "type": "number"
+    },
+    "turnover": {
+      "minimum": 0,
+      "title": "Turnover",
+      "type": "number"
+    },
+    "rationale": {
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "timestamp",
+    "target_position",
+    "risk_budget",
+    "expected_return",
+    "expected_vol",
+    "constraints_hit",
+    "transaction_cost",
+    "turnover",
+    "rationale"
+  ],
+  "title": "Decision",
+  "type": "object"
+}

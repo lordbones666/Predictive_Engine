@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "timestamp": {
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "horizon": {
+      "title": "Horizon",
+      "type": "integer"
+    },
+    "mean_return": {
+      "title": "Mean Return",
+      "type": "number"
+    },
+    "stdev": {
+      "minimum": 0,
+      "title": "Stdev",
+      "type": "number"
+    },
+    "quantiles": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Quantiles",
+      "type": "object"
+    },
+    "calibration_score": {
+      "title": "Calibration Score",
+      "type": "number"
+    },
+    "provenance": {
+      "additionalProperties": true,
+      "title": "Provenance",
+      "type": "object"
+    }
+  },
+  "required": [
+    "timestamp",
+    "horizon",
+    "mean_return",
+    "stdev",
+    "quantiles",
+    "calibration_score",
+    "provenance"
+  ],
+  "title": "Forecast",
+  "type": "object"
+}

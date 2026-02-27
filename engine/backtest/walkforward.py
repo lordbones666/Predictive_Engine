@@ -57,6 +57,7 @@ def run_walkforward(
     feature_frame: dict[str, Any],
     config: dict[str, Any],
     model_name: str,
+    extra_hashes: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     ff = validate_feature_frame(feature_frame)
     x, y, ts = to_xy(ff.model_dump())
@@ -165,7 +166,9 @@ def run_walkforward(
         f"- Net Sharpe: {metrics['net_sharpe']:.4f}\n"
         f"- Calibration: {metrics['calibration_score']:.4f}\n"
     )
-    artifact_paths = write_run_artifacts(config, metrics, forecasts, decisions, summary)
+    artifact_paths = write_run_artifacts(
+        config, metrics, forecasts, decisions, summary, extra_hashes=extra_hashes
+    )
 
     result = {
         "metrics": metrics,

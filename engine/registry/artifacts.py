@@ -20,6 +20,7 @@ def write_run_artifacts(
     decisions: list[dict[str, Any]],
     summary: str,
     root: Path = Path("artifacts"),
+    extra_hashes: dict[str, str] | None = None,
 ) -> dict[str, str]:
     run_dir = root / f"run_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -42,6 +43,8 @@ def write_run_artifacts(
         "forecasts": _sha256_text(forecasts_path.read_text(encoding="utf-8")),
         "decisions": _sha256_text(decisions_path.read_text(encoding="utf-8")),
     }
+    if extra_hashes:
+        hashes.update(extra_hashes)
     return {
         "run_dir": str(run_dir),
         "config": str(cfg_path),

@@ -72,7 +72,7 @@ def to_market_data(
     clean_df: pd.DataFrame,
     symbol: str,
     timezone: str = "UTC",
-    adjustments: dict[str, str] | None = None,
+    adjustments: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     data = clean_df.copy()
     data.index = pd.to_datetime(data.index, utc=True).tz_convert(timezone)

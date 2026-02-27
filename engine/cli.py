@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +13,7 @@ import yaml
 from engine.backtest.reporting import build_decision_support_report, write_report
 from engine.backtest.walkforward import promotion_gate, run_walkforward
 from engine.data.adapters import load_csv, load_parquet
+from engine.data.lineage import sha256_dataframe, sha256_file, sha256_json
 from engine.data.quality import run_quality_gates, to_market_data
 from engine.data.schema import emit_json_schemas, validate_feature_frame, validate_market_data
 from engine.features.feature_sets import build_feature_frame
@@ -32,8 +35,15 @@ def cmd_ingest(args: argparse.Namespace) -> None:
         else load_parquet(args.input, cfg["ingest"]["symbol"])
     )
     clean, quarantined = run_quality_gates(df)
+    lineage = {
+        "raw_input_hash": sha256_file(args.input),
+        "clean_dataframe_hash": sha256_dataframe(clean),
+    }
     market = to_market_data(
-        clean, symbol=cfg["ingest"]["symbol"], timezone=cfg["ingest"]["timezone"]
+        clean,
+        symbol=cfg["ingest"]["symbol"],
+        timezone=cfg["ingest"]["timezone"],
+        adjustments={"status": "unadjusted", "lineage": lineage},
     )
     validate_market_data(market)
     Path(args.output).write_text(json.dumps(market, indent=2), encoding="utf-8")
@@ -51,6 +61,10 @@ def cmd_features(args: argparse.Namespace) -> None:
     ff = build_feature_frame(
         mdf, market["symbol"], cfg["features"]["horizon"], cfg["features"]["lags"]
     )
+    ff["metadata"]["lineage"] = {
+        "market_data_hash": sha256_json(market),
+        "feature_frame_hash": sha256_json(ff),
+    }
     validate_feature_frame(ff)
     Path(args.output).write_text(json.dumps(ff, indent=2), encoding="utf-8")
 
@@ -64,22 +78,49 @@ def _parse_baselines(raw: str) -> list[str]:
     return baselines if baselines else DEFAULT_BASELINES
 
 
+def _fast_backtest_config(config: dict[str, Any]) -> dict[str, Any]:
+    fast_cfg = deepcopy(config)
+    fast_cfg["backtest"]["train_window"] = min(int(config["backtest"]["train_window"]), 40)
+    fast_cfg["backtest"]["step"] = max(int(config["backtest"]["step"]), 5)
+    return fast_cfg
+
+
 def cmd_backtest(args: argparse.Namespace) -> None:
     emit_json_schemas()
     cfg = _load_config(args.config)
     ff = json.loads(Path(args.features).read_text(encoding="utf-8"))
+    effective_cfg = _fast_backtest_config(cfg) if args.fast or os.getenv("CI") == "true" else cfg
 
-    candidate_result = run_walkforward(ff, cfg, model_name=args.model)
-    payload: dict[str, Any] = {"candidate_model": args.model, "candidate": candidate_result}
+    feature_hash = ff.get("metadata", {}).get("lineage", {}).get("feature_frame_hash")
+    extra_hashes = {"feature_frame_hash": str(feature_hash)} if feature_hash else None
+
+    candidate_result = run_walkforward(
+        ff,
+        effective_cfg,
+        model_name=args.model,
+        extra_hashes=extra_hashes,
+    )
+    payload: dict[str, Any] = {
+        "candidate_model": args.model,
+        "candidate": candidate_result,
+        "mode": "fast" if effective_cfg is not cfg else "full",
+    }
 
     if args.run_baselines:
         baseline_models = _parse_baselines(args.baseline_models)
+        if args.fast or os.getenv("CI") == "true":
+            baseline_models = baseline_models[:1]
         baselines: dict[str, Any] = {}
         promotion: dict[str, Any] = {}
         for baseline_model in baseline_models:
-            baseline_result = run_walkforward(ff, cfg, model_name=baseline_model)
+            baseline_result = run_walkforward(
+                ff,
+                effective_cfg,
+                model_name=baseline_model,
+                extra_hashes=extra_hashes,
+            )
             baselines[baseline_model] = baseline_result
-            promoted, reasons = promotion_gate(candidate_result, baseline_result, cfg)
+            promoted, reasons = promotion_gate(candidate_result, baseline_result, effective_cfg)
             promotion[baseline_model] = {"promoted": promoted, "reasons": reasons}
         payload["baselines"] = baselines
         payload["promotion_vs_baseline"] = promotion
@@ -134,6 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     backtest.add_argument("--run-baselines", action="store_true")
     backtest.add_argument("--baseline-models", default=",".join(DEFAULT_BASELINES))
     backtest.add_argument("--comparison-output", default="comparison_results.json")
+    backtest.add_argument("--fast", action="store_true")
     backtest.set_defaults(func=cmd_backtest)
 
     analyze = sub.add_parser("analyze")

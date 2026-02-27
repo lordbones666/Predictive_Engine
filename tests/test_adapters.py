@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from engine.data.adapters import load_csv, load_parquet
 
@@ -15,6 +16,7 @@ def test_csv_adapter(synthetic_ohlcv: pd.DataFrame, tmp_path) -> None:
 
 
 def test_parquet_adapter(synthetic_ohlcv: pd.DataFrame, tmp_path) -> None:
+    pytest.importorskip("pyarrow")
     src = synthetic_ohlcv.reset_index().rename(columns={"index": "timestamp"})
     path = tmp_path / "sample.parquet"
     src.to_parquet(path, index=False)

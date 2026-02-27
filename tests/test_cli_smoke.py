@@ -82,6 +82,9 @@ def test_cli_end_to_end_offline(synthetic_ohlcv: pd.DataFrame, tmp_path: Path) -
             "--run-baselines",
             "--comparison-output",
             str(comparison_path),
+            "--fast",
+            "--baseline-models",
+            "baseline_zero",
         ],
         cwd=Path.cwd(),
     )
@@ -102,8 +105,11 @@ def test_cli_end_to_end_offline(synthetic_ohlcv: pd.DataFrame, tmp_path: Path) -
     comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
     assert "candidate" in comparison
     assert "baselines" in comparison
-    assert "baseline_zero" in comparison["baselines"]
+    assert comparison["mode"] == "fast"
+    assert list(comparison["baselines"].keys()) == ["baseline_zero"]
     assert Path(comparison["candidate"]["artifact_paths"]["run_dir"]).exists()
     support = json.loads(support_path.read_text(encoding="utf-8"))
+    candidate_hashes = comparison["candidate"]["hashes"]
+    assert "feature_frame_hash" in candidate_hashes
     assert support["latest_signal"]["signal"] in {"LONG", "SHORT", "FLAT"}
     assert len(support["external_context"]) == 1

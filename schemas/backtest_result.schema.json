@@ -8,7 +8,7 @@
       "title": "Metrics",
       "type": "object"
     },
-    "equity_curve": {
+    "gross_curve": {
       "items": {
         "additionalProperties": {
           "anyOf": [
@@ -22,8 +22,49 @@
         },
         "type": "object"
       },
-      "title": "Equity Curve",
+      "title": "Gross Curve",
       "type": "array"
+    },
+    "net_curve": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Net Curve",
+      "type": "array"
+    },
+    "drawdown_series": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Drawdown Series",
+      "type": "array"
+    },
+    "constraint_hit_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Constraint Hit Counts",
+      "type": "object"
     },
     "logs": {
       "items": {
@@ -49,7 +90,10 @@
   },
   "required": [
     "metrics",
-    "equity_curve",
+    "gross_curve",
+    "net_curve",
+    "drawdown_series",
+    "constraint_hit_counts",
     "logs",
     "artifact_paths",
     "hashes"

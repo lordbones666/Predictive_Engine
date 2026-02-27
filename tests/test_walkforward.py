@@ -24,4 +24,6 @@ def test_walkforward_end_to_end(synthetic_ohlcv: pd.DataFrame) -> None:
     }
     result = run_walkforward(ff, cfg, model_name="linear_ridge")
     assert "metrics" in result
-    assert len(result["equity_curve"]) > 0
+    assert len(result["net_curve"]) > 0
+    assert "gross_return" in result["metrics"]
+    assert "net_return" in result["metrics"]

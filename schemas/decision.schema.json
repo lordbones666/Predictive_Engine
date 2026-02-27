@@ -28,6 +28,16 @@
       "title": "Constraints Hit",
       "type": "array"
     },
+    "transaction_cost": {
+      "minimum": 0,
+      "title": "Transaction Cost",
+      "type": "number"
+    },
+    "turnover": {
+      "minimum": 0,
+      "title": "Turnover",
+      "type": "number"
+    },
     "rationale": {
       "title": "Rationale",
       "type": "string"
@@ -40,6 +50,8 @@
     "expected_return",
     "expected_vol",
     "constraints_hit",
+    "transaction_cost",
+    "turnover",
     "rationale"
   ],
   "title": "Decision",

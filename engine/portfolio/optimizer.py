@@ -35,5 +35,7 @@ def make_decision(
         "expected_return": mu - cost,
         "expected_vol": sigma,
         "constraints_hit": constraints_hit,
+        "transaction_cost": cost,
+        "turnover": turnover,
         "rationale": f"vol_target={config['target_vol']};cost={cost:.6f};turnover={turnover:.4f}",
     }

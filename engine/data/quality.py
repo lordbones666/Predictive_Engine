@@ -12,10 +12,25 @@ class QuarantineItem:
     reason: str
 
 
+def _infer_expected_index(index: pd.DatetimeIndex, expected_freq: str | None) -> pd.DatetimeIndex:
+    if expected_freq is not None:
+        return pd.date_range(index.min(), index.max(), freq=expected_freq, tz="UTC")
+
+    inferred = pd.infer_freq(index)
+    if inferred is not None:
+        return pd.date_range(index.min(), index.max(), freq=inferred, tz="UTC")
+
+    weekday_share = float((index.dayofweek < 5).mean()) if len(index) else 0.0
+    if weekday_share > 0.95:
+        return pd.date_range(index.min(), index.max(), freq="B", tz="UTC")
+    return pd.date_range(index.min(), index.max(), freq="D", tz="UTC")
+
+
 def run_quality_gates(
     df: pd.DataFrame,
     stale_threshold: int = 3,
     spike_sigma: float = 8.0,
+    expected_freq: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     frame = df.copy()
     frame.index = pd.DatetimeIndex(pd.to_datetime(frame.index, utc=True)).sort_values()
@@ -27,7 +42,7 @@ def run_quality_gates(
         quarantined.append(QuarantineItem(timestamp=pd.Timestamp(ts), reason="duplicate_timestamp"))
     frame = frame[~duplicated]
 
-    expected = pd.date_range(frame.index.min(), frame.index.max(), freq="D", tz="UTC")
+    expected = _infer_expected_index(pd.DatetimeIndex(frame.index), expected_freq)
     missing = expected.difference(pd.DatetimeIndex(frame.index))
     for ts in missing:
         quarantined.append(QuarantineItem(timestamp=pd.Timestamp(ts), reason="missing_timestamp"))

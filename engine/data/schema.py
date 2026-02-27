@@ -61,6 +61,8 @@ class Decision(BaseModel):
     expected_return: float
     expected_vol: float
     constraints_hit: list[str]
+    transaction_cost: float = Field(ge=0)
+    turnover: float = Field(ge=0)
     rationale: str
 
 
@@ -68,7 +70,10 @@ class BacktestResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     metrics: dict[str, float]
-    equity_curve: list[dict[str, float | str]]
+    gross_curve: list[dict[str, float | str]]
+    net_curve: list[dict[str, float | str]]
+    drawdown_series: list[dict[str, float | str]]
+    constraint_hit_counts: dict[str, int]
     logs: list[str]
     artifact_paths: dict[str, str]
     hashes: dict[str, str]

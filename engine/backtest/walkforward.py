@@ -45,6 +45,14 @@ def _instantiate(name: str, seed: int) -> Any:
     return RandomForestModel(random_state=seed)
 
 
+def _drawdown_from_curve(curve: list[float]) -> float:
+    if not curve:
+        return 0.0
+    series = pd.Series(curve)
+    peak = series.cummax()
+    return float((series.iloc[-1] / peak.iloc[-1]) - 1.0)
+
+
 def run_walkforward(
     feature_frame: dict[str, Any],
     config: dict[str, Any],
@@ -58,13 +66,19 @@ def run_walkforward(
 
     forecasts: list[dict[str, Any]] = []
     decisions: list[dict[str, Any]] = []
-    pnl: list[float] = []
+    gross_pnl: list[float] = []
+    net_pnl: list[float] = []
     y_true: list[float] = []
     y_pred: list[float] = []
     sigma_pred: list[float] = []
     current_position = 0.0
-    equity = 1.0
-    equity_curve: list[dict[str, float | str]] = []
+    gross_equity = 1.0
+    net_equity = 1.0
+    gross_curve: list[dict[str, float | str]] = []
+    net_curve: list[dict[str, float | str]] = []
+    drawdown_series: list[dict[str, float | str]] = []
+    net_curve_values: list[float] = []
+    constraint_hit_counts: dict[str, int] = {}
 
     for i in range(train, len(x), step):
         x_train, y_train = x.iloc[i - train : i], y.iloc[i - train : i]
@@ -86,33 +100,58 @@ def run_walkforward(
                 }
             )
             validate_forecast(fc)
+
+            current_drawdown = _drawdown_from_curve(net_curve_values)
             decision = make_decision(
-                fc, current_position, drawdown=0.0, risk_budget=1.0, config=risk_cfg
+                fc,
+                current_position,
+                drawdown=current_drawdown,
+                risk_budget=max(0.0, 1.0 + current_drawdown),
+                config=risk_cfg,
             )
             validate_decision(decision)
+            for hit in decision["constraints_hit"]:
+                constraint_hit_counts[hit] = constraint_hit_counts.get(hit, 0) + 1
+
             forecasts.append(fc)
             decisions.append(decision)
             ret = float(yv)
             target_position = float(decision["target_position"])
-            realized = target_position * ret
-            pnl.append(realized)
+            gross_realized = target_position * ret
+            net_realized = gross_realized - float(decision["transaction_cost"])
+            gross_pnl.append(gross_realized)
+            net_pnl.append(net_realized)
             y_true.append(ret)
             y_pred.append(float(fc["mean_return"]))
             sigma_pred.append(float(fc["stdev"]))
             current_position = target_position
-            equity *= 1 + realized
-            equity_curve.append({"timestamp": str(fc["timestamp"]), "equity": equity})
 
-    pnl_series = pd.Series(pnl)
+            gross_equity *= 1 + gross_realized
+            net_equity *= 1 + net_realized
+            net_curve_values.append(net_equity)
+            gross_curve.append({"timestamp": str(fc["timestamp"]), "equity": gross_equity})
+            net_curve.append({"timestamp": str(fc["timestamp"]), "equity": net_equity})
+            drawdown_series.append(
+                {
+                    "timestamp": str(fc["timestamp"]),
+                    "drawdown": _drawdown_from_curve(net_curve_values),
+                }
+            )
+
+    gross_pnl_series = pd.Series(gross_pnl)
+    net_pnl_series = pd.Series(net_pnl)
     positions = [0.0] + [float(d["target_position"]) for d in decisions]
+    net_equity_series = pd.Series([float(x["equity"]) for x in net_curve])
     metrics = {
         "mae": mae(np.array(y_true), np.array(y_pred)),
         "rmse": rmse(np.array(y_true), np.array(y_pred)),
-        "sharpe": sharpe(pnl_series),
-        "sortino": sortino(pnl_series),
-        "mdd": max_drawdown(pd.Series([float(x["equity"]) for x in equity_curve])),
+        "gross_sharpe": sharpe(gross_pnl_series),
+        "net_sharpe": sharpe(net_pnl_series),
+        "net_sortino": sortino(net_pnl_series),
+        "mdd": max_drawdown(net_equity_series) if not net_equity_series.empty else 0.0,
         "turnover": float(np.mean(np.abs(np.diff(positions)))) if len(positions) > 1 else 0.0,
-        "net_return": float(pnl_series.sum()),
+        "gross_return": float(gross_pnl_series.sum()),
+        "net_return": float(net_pnl_series.sum()),
         "calibration_score": calibration_score(
             np.array(y_true), np.array(y_pred), np.array(sigma_pred)
         ),
@@ -121,15 +160,19 @@ def run_walkforward(
     summary = (
         f"# Backtest Summary\n\n"
         f"- Model: {model_name}\n"
+        f"- Gross Return: {metrics['gross_return']:.6f}\n"
         f"- Net Return: {metrics['net_return']:.6f}\n"
-        f"- Sharpe: {metrics['sharpe']:.4f}\n"
+        f"- Net Sharpe: {metrics['net_sharpe']:.4f}\n"
         f"- Calibration: {metrics['calibration_score']:.4f}\n"
     )
     artifact_paths = write_run_artifacts(config, metrics, forecasts, decisions, summary)
 
     result = {
         "metrics": metrics,
-        "equity_curve": equity_curve,
+        "gross_curve": gross_curve,
+        "net_curve": net_curve,
+        "drawdown_series": drawdown_series,
+        "constraint_hit_counts": constraint_hit_counts,
         "logs": ["walkforward_complete"],
         "artifact_paths": {k: v for k, v in artifact_paths.items() if k != "hashes"},
         "hashes": json.loads(artifact_paths["hashes"]),

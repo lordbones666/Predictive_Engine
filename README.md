@@ -16,6 +16,7 @@ python -m engine.cli features --config engine/config/default.yaml --market-data 
 python -m engine.cli train
 python -m engine.cli backtest --config engine/config/default.yaml --features feature_frame.json --walkforward --model linear_ridge --run-baselines
 python -m engine.cli promote --config engine/config/default.yaml --candidate candidate.json --baseline baseline.json
+python -m engine.cli analyze --comparison comparison_results.json --external-context context.json --output decision_support.json
 python -c "import engine; import engine.data.schema"
 ```
 
@@ -37,3 +38,7 @@ ruff check .
 mypy engine
 pytest --cov=engine --cov-report=term-missing
 ```
+
+## GPT role separation
+- Forecasts and positions come only from engine modules (`models/*`, `portfolio/*`, `backtest/*`).
+- `analyze` translates schema-valid artifacts into decision support and can attach timestamped external context without overriding model outputs.

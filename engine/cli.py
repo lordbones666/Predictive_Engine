@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from engine.backtest.reporting import build_decision_support_report, write_report
 from engine.backtest.walkforward import promotion_gate, run_walkforward
 from engine.data.adapters import load_csv, load_parquet
 from engine.data.quality import run_quality_gates, to_market_data
@@ -87,6 +88,16 @@ def cmd_backtest(args: argparse.Namespace) -> None:
     print(json.dumps(payload, indent=2))
 
 
+def cmd_analyze(args: argparse.Namespace) -> None:
+    comparison = json.loads(Path(args.comparison).read_text(encoding="utf-8"))
+    external_context: list[dict[str, str]] | None = None
+    if args.external_context:
+        external_context = json.loads(Path(args.external_context).read_text(encoding="utf-8"))
+    report = build_decision_support_report(comparison, external_context=external_context)
+    write_report(report, Path(args.output))
+    print(json.dumps(report, indent=2))
+
+
 def cmd_promote(args: argparse.Namespace) -> None:
     candidate = json.loads(Path(args.candidate).read_text(encoding="utf-8"))
     baseline = json.loads(Path(args.baseline).read_text(encoding="utf-8"))
@@ -124,6 +135,12 @@ def build_parser() -> argparse.ArgumentParser:
     backtest.add_argument("--baseline-models", default=",".join(DEFAULT_BASELINES))
     backtest.add_argument("--comparison-output", default="comparison_results.json")
     backtest.set_defaults(func=cmd_backtest)
+
+    analyze = sub.add_parser("analyze")
+    analyze.add_argument("--comparison", required=True)
+    analyze.add_argument("--output", default="decision_support.json")
+    analyze.add_argument("--external-context")
+    analyze.set_defaults(func=cmd_analyze)
 
     promote = sub.add_parser("promote")
     promote.add_argument("--config", required=True)

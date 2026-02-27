@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "metrics": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Metrics",
+      "type": "object"
+    },
+    "equity_curve": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Equity Curve",
+      "type": "array"
+    },
+    "logs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Logs",
+      "type": "array"
+    },
+    "artifact_paths": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Artifact Paths",
+      "type": "object"
+    },
+    "hashes": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Hashes",
+      "type": "object"
+    }
+  },
+  "required": [
+    "metrics",
+    "equity_curve",
+    "logs",
+    "artifact_paths",
+    "hashes"
+  ],
+  "title": "BacktestResult",
+  "type": "object"
+}

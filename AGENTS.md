@@ -1,6 +1,6 @@
 # AGENTS.md — Financial Prediction Engine (Reproducible, Testable, Uncertainty-Aware)
 
-This repo is built for **honest forecasting** and **risk-constrained decisions**, and **educated Prediction**  
+This repo is built for **honest forecasting** and **risk-constrained decisions**.
 All contributions must preserve: **reproducibility, schema contracts, leakage safety, and walk-forward evaluation**.
 
 ---
